@@ -27,7 +27,7 @@ public class SimpleJDBCRepository {
     private static final String findUserByNameSQL = "SELECT * FROM users WHERE firstName=?";
     private static final String findAllUserSQL = "SELECT * FROM users";
 
-    public Long createUser(User user) throws SQLException {
+    public Long createUser(User user) {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(createUserSQL);
@@ -41,7 +41,7 @@ public class SimpleJDBCRepository {
         }
     }
 
-    public User findUserById(Long userId) throws SQLException {
+    public User findUserById(Long userId) {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(findUserByIdSQL);
@@ -54,7 +54,7 @@ public class SimpleJDBCRepository {
         }
     }
 
-    public User findUserByName(String userName) throws SQLException {
+    public User findUserByName(String userName) {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(findUserByNameSQL);
@@ -67,9 +67,9 @@ public class SimpleJDBCRepository {
         }
     }
 
-    public List<User> findAllUser() throws SQLException {
+    public List<User> findAllUser() {
+        List<User> list = new ArrayList<>();
         try {
-            List<User> list = new ArrayList<>();
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(findAllUserSQL);
             ResultSet rs = ps.executeQuery();
@@ -82,7 +82,7 @@ public class SimpleJDBCRepository {
         }
     }
 
-    public User updateUser(User user) throws SQLException {
+    public User updateUser(User user) {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(updateUserSQL);
@@ -98,7 +98,7 @@ public class SimpleJDBCRepository {
         }
     }
 
-    public void deleteUser(Long userId) throws SQLException {
+    public void deleteUser(Long userId) {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(deleteUser);
