@@ -21,7 +21,7 @@ public class SimpleJDBCRepository {
     private Statement st = null;
 
     private static final String createUserSQL = "INSERT INTO users(firstName, lastName, age) VALUES (?,?,?)";
-    private static final String updateUserSQL = "UPDATE users SET firstName=?, lastName=?, age=?";
+    private static final String updateUserSQL = "UPDATE users SET firstName=?, lastName=?, age=? WHERE id=?";
     private static final String deleteUser = "DELETE FROM users WHERE id=?";
     private static final String findUserByIdSQL = "SELECT * FROM users WHERE id=?";
     private static final String findUserByNameSQL = "SELECT * FROM users WHERE firstName=?";
@@ -30,14 +30,20 @@ public class SimpleJDBCRepository {
     public Long createUser(User user) {
         try {
             connection = CustomDataSource.getInstance().getConnection();
-            ps = connection.prepareStatement(createUserSQL);
+            ps = connection.prepareStatement(createUserSQL, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, user.getFirstName());
             ps.setString(2, user.getLastName());
             ps.setInt(3, user.getAge());
-            ps.execute();
-            return user.getId();
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                } else {
+                    throw new RuntimeException("Failed to retrieve generated ID.");
+                }
+            }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException("Failed to create user.", e);
         }
     }
 
@@ -46,11 +52,15 @@ public class SimpleJDBCRepository {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(findUserByIdSQL);
             ps.setLong(1, userId);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return new User(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getInt(4));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new User(rs.getLong("id"), rs.getString("firstName"), rs.getString("lastName"), rs.getInt("age"));
+                } else {
+                    return null;
+                }
+            }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException("Failed to find user by ID.", e);
         }
     }
 
@@ -58,12 +68,16 @@ public class SimpleJDBCRepository {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(findUserByNameSQL);
-            ps.setString(2, userName);
-            ResultSet rs = ps.executeQuery();
-            rs.next();
-            return new User(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getInt(4));
+            ps.setString(1, userName);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new User(rs.getLong("id"), rs.getString("firstName"), rs.getString("lastName"), rs.getInt("age"));
+                } else {
+                    return null;
+                }
+            }
         } catch (SQLException e) {
-            throw new RuntimeException();
+            throw new RuntimeException("Failed to find user by name.", e);
         }
     }
 
@@ -87,10 +101,10 @@ public class SimpleJDBCRepository {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(updateUserSQL);
             ResultSet rs = ps.executeQuery();
-            ps.setLong(1, user.getId());
             ps.setString(1, user.getFirstName());
             ps.setString(2, user.getLastName());
             ps.setInt(3, user.getAge());
+            ps.setLong(4, user.getId());
             ps.executeUpdate();
             return findUserById(user.getId());
         } catch (SQLException e) {
