@@ -86,9 +86,10 @@ public class SimpleJDBCRepository {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(findAllUserSQL);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(new User(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getInt(4)));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new User(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getInt(4)));
+                }
             }
             return list;
         } catch (SQLException e) {
@@ -100,7 +101,6 @@ public class SimpleJDBCRepository {
         try {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(updateUserSQL);
-            ResultSet rs = ps.executeQuery();
             ps.setString(1, user.getFirstName());
             ps.setString(2, user.getLastName());
             ps.setInt(3, user.getAge());
@@ -117,7 +117,7 @@ public class SimpleJDBCRepository {
             connection = CustomDataSource.getInstance().getConnection();
             ps = connection.prepareStatement(deleteUser);
             ps.setLong(1, userId);
-            ResultSet rs = ps.executeQuery();
+            ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException();
         }
